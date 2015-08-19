@@ -306,20 +306,18 @@ if __name__ == '__main__':
 #    re = build("~([a-g]+|[l-q])")
 #    inp = "qabcd"
 
-#    integer_re = "[0-9]+"
-#    float_re = [integer_re, integer_re + "\.", "\.[0-9]*", integer_re + "\.[0-9]+", integer_re + "\.[0-9]*"]
-#    exp_re = r"((e|E)(\+|\-)?[0-9]+)?"
-#    float_re = ["("+f + exp_re+")" for f in float_re]
-#    final_re = "|".join(float_re)
-#    re = build("`(" + final_re + ")")
-#    inp = "12389712897.11238971298e-1912379182"
-#    inp_t = ""
-#    for j in inp:
-#        inp_t = j + inp_t
-#    inp = inp_t
+    integer_re = "[0-9]+"
+    float_re = [integer_re, integer_re + "\.", "\.[0-9]*", integer_re + "\.[0-9]+", integer_re + "\.[0-9]*"]
+    exp_re = r"((e|E)(\+|\-)?[0-9]+)?"
+    float_re = ["("+f + exp_re+")" for f in float_re]
+    final_re = "|".join(float_re)
+    re = build("`(" + final_re + ")")
+    inp = "12389712897.11238971298e-1912379182"
+    inp_t = ""
+    for j in inp:
+        inp_t = j + inp_t
+    inp = inp_t
 
-    re = build("`(ab(([abc])*^([cde])*))|@")
-    inp = "eddddeddddba"
     i = 0
     re_c = re
     last = 1

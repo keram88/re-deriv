@@ -55,6 +55,13 @@ def t_error(t):
 
 lexer = lex.lex();
 
+precedence = (
+    ('left', 'TILDE', 'TICK'),
+    ('right', 'OPT', 'STAR', 'PLUS'),
+    ('left', 'AND', 'DASH'),
+    ('left', 'BAR', 'CARET'),
+    )
+
 def p_RE(p):
     '''RE : RE BAR inter
           | RE CARET inter
@@ -92,8 +99,8 @@ def p_concatenation(p):
         p[0] = p[1]
 
 def p_neg_rev(p):
-    '''neg_rev : TILDE atom
-               | TICK atom
+    '''neg_rev : TILDE neg_rev
+               | TICK neg_rev
                | atom'''
     if len(p) == 3:
         if p[1] == "`":
@@ -111,15 +118,15 @@ def p_quant(p):
         p[0] = p[1]
         
 def p_star(p):
-    '''star : neg_rev STAR'''
+    '''star : quant STAR'''
     p[0] = ['Star', p[1]]
 
 def p_plus(p):
-    '''plus : neg_rev PLUS'''
+    '''plus : quant PLUS'''
     p[0] = ['Plus', p[1]]
 
 def p_opt(p):
-    '''opt : neg_rev OPT'''
+    '''opt : quant OPT'''
     p[0] = ['Option', p[1]]
     
 def p_atom(p):
