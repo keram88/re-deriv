@@ -2,6 +2,7 @@ import ply.lex as lex
 import ply.yacc as yacc
 
 tokens = (
+    "OCTAL",
     "BACK",
     "DOT",
     "STAR",
@@ -20,6 +21,15 @@ tokens = (
     "TICK",
     "CHAR",
 )
+
+def t_OCTAL(t):
+    r"\\0o[0-3][0-7]{0,2}"
+    result = 0
+    for c in t.value[3:]:
+        result *= 8
+        result += ord(c) - ord('0')
+    t.value = chr(result)
+    return t
 
 def t_BACK(t):
     r'\\'
@@ -146,7 +156,8 @@ def p_any(p):
 
 def p_char(p):
     '''char : CHAR
-            | EMPTY'''
+            | EMPTY
+            | OCTAL'''
     if p[1] == '@':
         p[0] = ['Empty']
     else:

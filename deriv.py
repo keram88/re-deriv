@@ -181,7 +181,19 @@ class SigStar(RE):
 
     def __str__(self):
         return ".*"
-    
+
+def char_to_str(o):
+    import string
+    result = ""
+    if chr(o) in string.printable:
+        if chr(o) in meta:
+            result = "\\" + chr(o)
+        else:
+            result = chr(o)
+    else:
+        result = "\\" + str(oct(o))
+    return result
+            
 class Range(RE):
     def __init__(self, r):
         self.left  = r[0]
@@ -200,9 +212,9 @@ class Range(RE):
         return Null()
 
     def __str__(self):
-        ch_left = "\\" + chr(self.left) if chr(self.left) in meta else chr(self.left)
-        ch_right = "\\" + chr(self.right) if chr(self.right) in meta else chr(self.right)
-        if self.left == self.right:
+        ch_left = char_to_str(self.left)
+        ch_right = char_to_str(self.right)
+        if ch_left == ch_right:
             return ch_left
         return "[{}-{}]".format(ch_left, ch_right)
 
@@ -287,6 +299,8 @@ def build_r(expr):
         return Union(build_r(expr[1]), Epsilon())
     elif expr[0] == 'Empty':
         return Epsilon()
+    elif expr[0] == 'Difference':
+        return Intersection(build_r(expr[1]), Not(build_r(expr[2])))
     elif expr[0] == 'Xor':
         l = build_r(expr[1])
         r = build_r(expr[2])
@@ -309,7 +323,7 @@ if __name__ == '__main__':
     integer_re = "[0-9]+"
     float_re = [integer_re, integer_re + "\.", "\.[0-9]*", integer_re + "\.[0-9]+", integer_re + "\.[0-9]*"]
     exp_re = r"((e|E)(\+|\-)?[0-9]+)?"
-    float_re = ["("+f + exp_re+")" for f in float_re]
+    float_re = ["("+f + exp_re + ")" for f in float_re]
     final_re = "|".join(float_re)
     re = build("`(" + final_re + ")")
     inp = "12389712897.11238971298e-1912379182"
