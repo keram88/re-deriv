@@ -33,22 +33,22 @@ def t_BACK(t):
         raise Exception("End of stream after escape token")
         
 
-t_DOT = r'\.'
-t_STAR = r'\*'
-t_PLUS = r'\+'
-t_LPAREN= r"\("
-t_RPAREN= r"\)"
-t_LBRACK= r"\["
-t_RBRACK= r"\]"
-t_BAR = r"\|"
-t_CARET = r"\^"
-t_TILDE = r"\~"
-t_AND = r"\&"
-t_DASH = r"\-"
-t_OPT  = r"\?"
-t_EMPTY = r"@"
-t_TICK = r"`"
-t_CHAR = r"."
+t_DOT    = r'\.'
+t_STAR   = r'\*'
+t_PLUS   = r'\+'
+t_LPAREN = r"\("
+t_RPAREN = r"\)"
+t_LBRACK = r"\["
+t_RBRACK = r"\]"
+t_BAR    = r"\|"
+t_CARET  = r"\^"
+t_TILDE  = r"\~"
+t_AND    = r"\&"
+t_DASH   = r"\-"
+t_OPT    = r"\?"
+t_EMPTY  = r" @" # Space is for higher matching precedence than CHAR
+t_TICK   = r" `" # Space is for higher matching precedence than CHAR
+t_CHAR   = r"."
 
 def t_error(t):
     print("Wut token", t);
@@ -56,70 +56,77 @@ def t_error(t):
 lexer = lex.lex();
 
 def p_RE(p):
-    '''RE : union
-          | simple_RE'''
-    p[0] = p[1]
+    '''RE : RE BAR inter
+          | RE CARET inter
+          | inter
+          | BACK''' # BACK never appears. yacc needs to use this token.
 
-def p_union(p):
-    '''union : RE BAR simple_RE
-             | intersection
-             | xor'''
-    if len(p) == 4:
-        p[0] = ['Union', p[1], p[3]]
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        if p[2] == "|":
+            p[0] = ['Union', p[1], p[3]]
+        else:
+            p[0] = ['Xor', p[1], p[3]]
+        
+
+def p_inter(p):
+    '''inter : inter AND concatenation
+             | inter DASH concatenation
+             | concatenation'''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        if p[2] == "|":
+            p[0] = ['Intersection', p[1], p[3]]
+        else:
+            p[0] = ['Difference', p[1], p[3]]
+                        
+    
+def p_concatenation(p):
+    '''concatenation : concatenation quant
+                     | quant'''
+    if len(p) == 3:
+        p[0] = ['Concat', p[1], p[2]]
     else:
         p[0] = p[1]
 
-def p_intersection(p):
-    '''intersection : RE AND simple_RE'''
-    p[0] = ['Intersection', p[1], p[3]]
+def p_neg_rev(p):
+    '''neg_rev : TILDE atom
+               | TICK atom
+               | atom'''
+    if len(p) == 3:
+        if p[1] == "`":
+            p[0] = ['Reverse', p[2]]
+        else:
+            p[0] = ['Not', p[2]]
+    else:
+        p[0] = p[1]
 
-def p_xor(p):
-    '''xor : RE CARET simple_RE'''
-    p[0] = ['Xor', p[1], p[3]]
-    
-def p_simple_RE(p):
-    '''simple_RE : concatenation
-                 | basic_RE'''
-    p[0] = p[1]
-
-def p_concatenation(p):
-    '''concatenation : simple_RE basic_RE'''
-    p[0] = ['Concat', p[1], p[2]]
-
-def p_basic_RE(p):
-    '''basic_RE : star
-                | plus
-                | opt
-                | not
-                | reverse
-                | elementary_RE'''
-    p[0] = p[1]
-
+def p_quant(p):
+        '''quant : star
+                 | plus
+                 | opt
+                 | neg_rev'''
+        p[0] = p[1]
+        
 def p_star(p):
-    '''star : elementary_RE STAR'''
+    '''star : neg_rev STAR'''
     p[0] = ['Star', p[1]]
 
 def p_plus(p):
-    '''plus : elementary_RE PLUS'''
+    '''plus : neg_rev PLUS'''
     p[0] = ['Plus', p[1]]
 
 def p_opt(p):
-    '''opt : elementary_RE OPT'''
+    '''opt : neg_rev OPT'''
     p[0] = ['Option', p[1]]
     
-def p_not(p):
-    '''not : TILDE elementary_RE'''
-    p[0] = ['Not', p[2]]
-
-def p_reverse(p):
-    '''reverse : TICK elementary_RE'''
-    p[0] = ['Reverse', p[2]]
-    
-def p_elementary_RE(p):
-    '''elementary_RE : group
-                     | any
-                     | char
-                     | set'''
+def p_atom(p):
+    '''atom : group
+            | any
+            | char
+            | set'''
     p[0] = p[1]
 
 def p_group(p):
@@ -132,29 +139,11 @@ def p_any(p):
 
 def p_char(p):
     '''char : CHAR
-            | EMPTY
-            | BACK BACK
-            | BACK DOT
-            | BACK STAR
-            | BACK PLUS
-            | BACK LPAREN
-            | BACK RPAREN
-            | BACK LBRACK
-            | BACK RBRACK
-            | BACK BAR
-            | BACK CARET
-            | BACK DASH
-            | BACK TILDE
-            | BACK AND
-            | BACK TICK
-            | BACK EMPTY'''
-    if len(p) == 2:
-        if p[1] == '@':
-            p[0] = ['Empty']
-        else:
-            p[0] = ['Range', (ord(p[1]), ord(p[1]))]
+            | EMPTY'''
+    if p[1] == '@':
+        p[0] = ['Empty']
     else:
-        p[0] = ['Range', (ord(p[2]), ord(p[2]))]
+        p[0] = ['Range', (ord(p[1]), ord(p[1]))]
 
 def p_set(p):
     '''set : positive_set
