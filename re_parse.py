@@ -21,10 +21,21 @@ tokens = (
     "CHAR",
 )
 
-t_BACK= r'''\\'''
-t_DOT = r'''\.'''
-t_STAR = r'''\*'''
-t_PLUS = r'''\+'''
+def t_BACK(t):
+    r'\\'
+    # If we find an escape character, read the next character
+    # and return it as a CHAR
+    next = lexer.token()
+    if next is not None:
+        next.type = "CHAR"
+        return next
+    else:
+        raise Exception("End of stream after escape token")
+        
+
+t_DOT = r'\.'
+t_STAR = r'\*'
+t_PLUS = r'\+'
 t_LPAREN= r"\("
 t_RPAREN= r"\)"
 t_LBRACK= r"\["
