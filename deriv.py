@@ -13,15 +13,17 @@ colors = ['\033[95m',
           '\033[4m']
 ENDC ='\033[0m'
 
-color = 0
-
+color = 1
+hits = set()
 def colorize(s):
     result = s
     global color
-    c = colors[color]
-    color = (color + 1) % len(colors)
-    result = str.replace(result, "(", c + "(" + ENDC)
-    result = str.replace(result, ")", c + ")" + ENDC)
+#    c = colors[color]
+#    color = (color + 1) % len(colors)
+    c = "\033[38;5;{}m".format(str(color))
+    color = ((color + 3) % 255) + 1
+    result = str.replace(result, "(", c  + "(" + ENDC)
+    result = str.replace(result, ")", c  + ")" + ENDC)
     return result
 
 def is_null(re):
@@ -320,6 +322,9 @@ if __name__ == '__main__':
 #    re = build("~([a-g]+|[l-q])")
 #    inp = "qabcd"
 
+    re = build("[a-d]|[a-e]&[c-f]")
+    print(re)
+    
     integer_re = "[0-9]+"
     float_re = [integer_re, integer_re + "\.", "\.[0-9]*", integer_re + "\.[0-9]+", integer_re + "\.[0-9]*"]
     exp_re = r"((e|E)(\+|\-)?[0-9]+)?"

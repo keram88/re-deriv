@@ -27,7 +27,7 @@ def t_OCTAL(t):
     result = 0
     for c in t.value[3:]:
         result *= 8
-        result += ord(c) - ord('0')
+        result += int(c)
     t.value = chr(result)
     return t
 
@@ -73,33 +73,34 @@ precedence = (
     )
 
 def p_RE(p):
-    '''RE : RE BAR inter
-          | RE CARET inter
+    '''RE : union
+          | xor
           | inter
           | BACK''' # BACK never appears. yacc needs to use this token.
+    p[0] = p[1]
 
-    if len(p) == 2:
-        p[0] = p[1]
-    else:
-        if p[2] == "|":
-            p[0] = ['Union', p[1], p[3]]
-        else:
-            p[0] = ['Xor', p[1], p[3]]
-        
+def p_union(p):
+    '''union : RE BAR inter'''
+    p[0] = ['Union', p[1], p[3]]
+
+def p_xor(p):
+    '''xor : RE CARET inter'''
+    p[0] = ['xor', p[1], p[3]]
 
 def p_inter(p):
-    '''inter : inter AND concatenation
-             | inter DASH concatenation
+    '''inter : intersection
+             | difference
              | concatenation'''
-    if len(p) == 2:
-        p[0] = p[1]
-    else:
-        if p[2] == "|":
-            p[0] = ['Intersection', p[1], p[3]]
-        else:
-            p[0] = ['Difference', p[1], p[3]]
+    p[0] = p[1]
                         
-    
+def p_intersection(p):
+    '''intersection :  inter AND concatenation'''
+    p[0] = ['Intersection', p[1], p[3]]
+
+def p_difference(p):
+    '''difference :  inter DASH concatenation'''
+    p[0] = ['Difference', p[1], p[3]]
+
 def p_concatenation(p):
     '''concatenation : concatenation quant
                      | quant'''
