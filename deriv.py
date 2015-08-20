@@ -288,11 +288,23 @@ def build_r(expr):
         return Intersection(build_r(expr[1]), build_r(expr[2]))
     elif expr[0] == 'Concat':
         return Concat(build_r(expr[1]), build_r(expr[2]))
-    elif expr[0] == 'Star':
-        return Star(build_r(expr[1]))
-    elif expr[0] == 'Plus':
-        sub = build_r(expr[1]);
-        return Concat(sub , Star(sub))
+    elif expr[0] == 'Repetition':
+        re = build_r(expr[3])
+        lower = int(expr[1])
+        upper = int(expr[2])
+        if upper >= 0 and upper < lower:
+            raise Exception("Invalid range: " + str(lower) + " - " + str(upper))
+        result = Epsilon()
+        # Create expression up to the lower bound
+        for i in range(lower):
+            result = Concat(result, re)
+        # Add expression up to the upper bound
+        if upper == -1:
+            result = Concat(result, Star(re))
+        else:
+            for i in range(upper - lower):
+                result = Concat(result, Union(re, Epsilon())) # These expressions are optional
+        return result
     elif expr[0] == 'Not':
         return Not(build_r(expr[1]))
     elif expr[0] == 'Range':
@@ -322,21 +334,19 @@ if __name__ == '__main__':
 #    re = build("~([a-g]+|[l-q])")
 #    inp = "qabcd"
 
-    re = build("[a-d]|[a-e]&[c-f]")
-    print(re)
-    
-    integer_re = "[0-9]+"
-    float_re = [integer_re, integer_re + "\.", "\.[0-9]*", integer_re + "\.[0-9]+", integer_re + "\.[0-9]*"]
-    exp_re = r"((e|E)(\+|\-)?[0-9]+)?"
-    float_re = ["("+f + exp_re + ")" for f in float_re]
-    final_re = "|".join(float_re)
-    re = build("`(" + final_re + ")")
-    inp = "12389712897.11238971298e-1912379182"
-    inp_t = ""
-    for j in inp:
-        inp_t = j + inp_t
-    inp = inp_t
-
+#    integer_re = "[0-9]+"
+#    float_re = [integer_re, integer_re + "\.", "\.[0-9]*", integer_re + "\.[0-9]+", integer_re + "\.[0-9]*"]
+#    exp_re = r"((e|E)(\+|\-)?[0-9]+)?"
+#    float_re = ["("+f + exp_re + ")" for f in float_re]
+#    final_re = "|".join(float_re)
+#    re = build("`(" + final_re + ")")
+#    inp = "12389712897.11238971298e-1912379182"
+#    inp_t = ""
+#    for j in inp:
+#        inp_t = j + inp_t
+#    inp = inp_t
+    re = build("~(a{5,7}b)")
+    inp = "a"*5+ "bb"
     i = 0
     re_c = re
     last = 1

@@ -11,6 +11,9 @@ tokens = (
     "RPAREN",
     "LBRACK",
     "RBRACK",
+    "LBRACE",
+    "RBRACE",
+    "COMMA",
     "BAR",
     "CARET",
     "DASH",
@@ -50,6 +53,9 @@ t_LPAREN = r"\("
 t_RPAREN = r"\)"
 t_LBRACK = r"\["
 t_RBRACK = r"\]"
+t_LBRACE = r"\{"
+t_RBRACE = r"\}"
+t_COMMA  = r" ,"
 t_BAR    = r"\|"
 t_CARET  = r"\^"
 t_TILDE  = r"\~"
@@ -125,21 +131,47 @@ def p_quant(p):
         '''quant : star
                  | plus
                  | opt
-                 | neg_rev'''
+                 | neg_rev
+                 | range_rep'''
         p[0] = p[1]
         
 def p_star(p):
     '''star : quant STAR'''
-    p[0] = ['Star', p[1]]
+    p[0] = ['Repetition', '0', '-1', p[1]]
 
 def p_plus(p):
     '''plus : quant PLUS'''
-    p[0] = ['Plus', p[1]]
+    p[0] = ['Repetition', '1', '-1', p[1]]
 
 def p_opt(p):
     '''opt : quant OPT'''
-    p[0] = ['Option', p[1]]
+    p[0] = ['Repetition', '0', '1', p[1]]
+
+def p_range_rep(p):
+    '''range_rep : quant LBRACE INT RBRACE
+                 | quant LBRACE INT COMMA RBRACE
+                 | quant LBRACE COMMA INT RBRACE
+                 | quant LBRACE INT COMMA INT RBRACE'''
+    if len(p) == 5:
+        p[0] = ['Repetition', p[3], p[3], p[1]]
+    elif len(p) == 6:
+        if p[3] == ",":
+            p[0] = ['Repetition', '0', p[4], p[1]]
+        else:
+            p[0] = ['Repetition', p[3], '-1', p[1]]
+    else:
+        p[0] = ['Repetition', p[3], p[5], p[1]]
     
+def p_INT(p):
+    '''INT : CHAR INT
+           | CHAR'''
+    if not (ord('0') <= ord(p[1]) <= ord('9')):
+        raise Exception("Unexpected character in range repetition: " + p[1])
+    if len(p) == 2: # CHAR case
+        p[0] = p[1]
+    else:
+        p[0] = p[1] + p[2]
+        
 def p_atom(p):
     '''atom : group
             | any
