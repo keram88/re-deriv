@@ -1,4 +1,14 @@
+# An implementation of Brzozowksi's Derivatives of Regular Expressions
+# See: http://matt.might.net/articles/implementation-of-regular-expression-matching-in-scheme-with-derivatives/
+# Supports 'exotic' regular language operations:
+#  - reversal
+#  - complement
+#  - intersection
+#  - xor
+#  - difference
+  
 import re_parse
+import graphviz as gv
 
 meta = ("\\", ".", "*", "+", "(", ")", "[", "]", "|", "^", "~", "&", "-", "?", "@")
 
@@ -75,6 +85,22 @@ class Intersection(RE):
     
     def __str__(self):
         return colorize("({})&({})").format(str(self.left),str(self.right), color)
+    
+    def to_dot(self, id = None):
+        result = ""
+        if id is None:
+            result = 'digraph RE {\n'
+            id = 1
+        result += '\tn_{} [label="&"];\n'.format(id)
+        result += '\tn_{} -> n_{};\n'.format(id, 2*id+1)
+        result += '\tn_{} -> n_{};\n'.format(id, 2*id+2)
+        result += self.left.to_dot(2*id + 1)
+        result += self.right.to_dot(2*id + 2)
+        if id == 1:
+            result += "}"
+        return result
+        
+        
 
 class Union(RE):
     def __init__(self, left, right):
@@ -110,6 +136,21 @@ class Union(RE):
     def __str__(self):
         return colorize("({})|({})").format(str(self.left), str(self.right))
 
+    def to_dot(self, id = None):
+        result = ""
+        if id is None:
+            result = 'digraph RE {\n'
+            id = 1
+        result += '\tn_{} [label="|"];\n'.format(id)
+        result += '\tn_{} -> n_{};\n'.format(id, 2*id+1)
+        result += '\tn_{} -> n_{};\n'.format(id, 2*id+2)
+        result += self.left.to_dot(2*id + 1)
+        result += self.right.to_dot(2*id + 2)
+        if id == 1:
+            result += "}"
+        return result
+
+    
 class Concat(RE):
     def __init__(self, left, right):
         self.left = left
@@ -141,6 +182,20 @@ class Concat(RE):
     def __str__(self):
         return colorize("(({})({}))").format(str(self.left), str(self.right))
 
+    def to_dot(self, id = None):
+        result = ""
+        if id is None:
+            result = 'digraph RE {\n'
+            id = 1
+        result += '\tn_{} [label="C"];\n'.format(id)
+        result += '\tn_{} -> n_{};\n'.format(id, 2*id+1)
+        result += '\tn_{} -> n_{};\n'.format(id, 2*id+2)
+        result += self.left.to_dot(2*id + 1)
+        result += self.right.to_dot(2*id + 2)
+        if id == 1:
+            result += "}"
+        return result
+
 class Star(RE):
     def __init__(self, re):
         self.r = re
@@ -168,6 +223,18 @@ class Star(RE):
     def __str__(self):
         return colorize("({})*").format(str(self.r))
 
+    def to_dot(self, id = None):
+        result = ""
+        if id is None:
+            result = 'digraph RE {\n'
+            id = 1
+        result += '\tn_{} [label="*"];\n'.format(id)
+        result += '\tn_{} -> n_{};\n'.format(id, 2*id+1)
+        result += self.r.to_dot(2*id + 1)
+        if id == 1:
+            result += "}"
+        return result
+
 class SigStar(RE):
     def __init__(self):
         pass
@@ -183,6 +250,16 @@ class SigStar(RE):
 
     def __str__(self):
         return ".*"
+
+    def to_dot(self, id = None):
+        result = ""
+        if id is None:
+            result = 'digraph RE {\n'
+            id = 1
+        result += '\tn_{} [label="{}", color=red];\n'.format(id, self.__str__())
+        if id == 1:
+            result += "}"
+        return result
 
 def char_to_str(o):
     import string
@@ -219,7 +296,17 @@ class Range(RE):
         if ch_left == ch_right:
             return ch_left
         return "[{}-{}]".format(ch_left, ch_right)
-
+    
+    def to_dot(self, id = None):
+        result = ""
+        if id is None:
+            result = 'digraph RE {\n'
+            id = 1
+        result += '\tn_{} [label="{}"];\n'.format(id, self.__str__())
+        if id == 1:
+            result += "}"
+        return result
+    
 class Not(RE):
     def __init__(self, r):
         self.r = r;
@@ -243,7 +330,19 @@ class Not(RE):
     
     def __str__(self):
         return colorize("~({})").format(str(self.r))
-    
+
+    def to_dot(self, id = None):
+        result = ""
+        if id is None:
+            result = 'digraph RE {\n'
+            id = 1
+        result += '\tn_{} [label="~"];\n'.format(id)
+        result += '\tn_{} -> n_{};\n'.format(id, 2*id+1)
+        result += self.r.to_dot(2*id + 1)
+        if id == 1:
+            result += "}"
+        return result
+
 class Epsilon(RE):
     def __init__(self):
         pass
@@ -264,7 +363,17 @@ class Epsilon(RE):
         return self
     def __str__(self):
         return "@"
-    
+
+    def to_dot(self, id = None):
+        result = ""
+        if id is None:
+            result = 'digraph RE {\n'
+            id = 1
+        result += '\tn_{} [label="{}", color=red];\n'.format(id, self.__str__())
+        if id == 1:
+            result += "}"
+        return result
+
 class Null(RE):
     def __init__(self):
         pass
@@ -280,7 +389,17 @@ class Null(RE):
         return other
     def __str__(self):
         return colorize("~(.*)")
-    
+
+    def to_dot(self, id = None):
+        result = ""
+        if id is None:
+            result = 'digraph RE {\n'
+            id = 1
+        result += '\tn_{} [label="{}", color=red];\n'.format(id, self.__str__())
+        if id == 1:
+            result += "}"
+        return result
+
 def build_r(expr):
     if expr[0] == 'Union':
         return Union(build_r(expr[1]), build_r(expr[2]))
@@ -334,22 +453,22 @@ if __name__ == '__main__':
 #    re = build("~([a-g]+|[l-q])")
 #    inp = "qabcd"
 
-#    integer_re = "[0-9]+"
-#    float_re = [integer_re, integer_re + "\.", "\.[0-9]*", integer_re + "\.[0-9]+", integer_re + "\.[0-9]*"]
-#    exp_re = r"((e|E)(\+|\-)?[0-9]+)?"
-#    float_re = ["("+f + exp_re + ")" for f in float_re]
-#    final_re = "|".join(float_re)
-#    re = build("`(" + final_re + ")")
-#    inp = "12389712897.11238971298e-1912379182"
-#    inp_t = ""
-#    for j in inp:
-#        inp_t = j + inp_t
-#    inp = inp_t
-    re = build("~(a{5,7}b)")
-    inp = "a"*5+ "bb"
+    integer_re = "[0-9]+"
+    float_re = [integer_re, integer_re + "\.", "\.[0-9]*", integer_re + "\.[0-9]+", integer_re + "\.[0-9]*"]
+    exp_re = r"((e|E)(\+|\-)?[0-9]+)?"
+    float_re = ["("+f + exp_re + ")" for f in float_re]
+    final_re = "|".join(float_re)
+#    re = build("(" + final_re + ")")
+#    inp = "12389712897.11238971298"
+    re = build("""([A-Z]|[0-9]|[a-z]|\.|_|%|\+|\-)+\@([A-Z]|[a-z]|[0-9]|\.|\-)+\.([A-Z]|[a-z]){2,}""")
+#    re = build("""(\.|[a-z])+\@""")
+    inp = "junk.email.address@gmail.com"
+#    re = build("~(((((((((((((((a)(a)))(a)))(a)))(a)))((a)|(@))))((a)|(@))))(b)))")
+#    inp = "a"*5+ "bb"
     i = 0
     re_c = re
     last = 1
+    
     print("Initial RE  :", str(re_c))
     print("Nullable?   :", is_empty(re_c.empty()))
     while i < len(inp):
@@ -359,6 +478,10 @@ if __name__ == '__main__':
         i += 1
     print("Final RE    :", str(re_c))
     print("Nullable?   :", is_empty(re_c.empty()))
+
+    with open("re.dot", 'w') as f:
+        f.write(re_c.to_dot())
+        
     if isinstance(re_c.empty(), Epsilon):
         print("Accepted")
     else:

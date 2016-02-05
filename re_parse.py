@@ -1,6 +1,75 @@
 import ply.lex as lex
 import ply.yacc as yacc
 
+# RE : union
+#    | xor
+#    | inter
+#
+# union : RE '|' inter
+#
+# xor : RE '^' inter
+#
+# inter : intersection
+#       | difference
+#       | concatenation
+#
+# intersection : inter '&' concatenation
+#
+# difference : inter '-' concatenation
+#
+# concatenation : concatenation quant
+#               | quant
+#
+# neg_rev : negation
+#         | reversal
+#         | atom
+#
+# negation : '~' neg_rev
+#
+# reversal : '`' neg_rev
+#
+# quant : star
+#       | plus
+#       | neg_rev
+#       | range_rep
+#
+# star : quant '*'
+#
+# plus : quant '+'
+#
+# opt : quant '?'
+#
+# range_rep : quant '(' INT ')'
+#           | quant '(' INT ',)'
+#           | quant '(,' INT ')'
+#           | quant '(' INT ',' INT ')'
+#
+# INT : [0-9] INT
+#     | [0-9]
+#
+# atom : group
+#      | any
+#      | char
+#      | set
+#
+# group : '(' RE ')'
+#
+# any : '.'
+#
+# set : positive_set
+#     | negative_set
+#
+# positive_set : '[' set_items ']'
+#
+# negative_set : '[^' set_items ']'
+#
+# set_items : range
+#           | char
+#
+# range : char '-' char
+#
+# char : .
+
 tokens = (
     "OCTAL",
     "BACK",
@@ -176,6 +245,7 @@ def p_atom(p):
     '''atom : group
             | any
             | char
+            | empty
             | set'''
     p[0] = p[1]
 
@@ -189,13 +259,13 @@ def p_any(p):
 
 def p_char(p):
     '''char : CHAR
-            | EMPTY
             | OCTAL'''
-    if p[1] == '@':
-        p[0] = ['Empty']
-    else:
-        p[0] = ['Range', (ord(p[1]), ord(p[1]))]
+    p[0] = ['Range', (ord(p[1]), ord(p[1]))]
 
+def p_empty(p):
+    '''empty : EMPTY'''
+    p[0] = ['Empty']
+    
 def p_set(p):
     '''set : positive_set
            | negative_set'''
