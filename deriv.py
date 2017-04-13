@@ -196,7 +196,7 @@ class Concat(RE):
             result += "}"
         return result
 
-class Star(RE):
+class Star(RE): # Represents the repitition of a language
     def __init__(self, re):
         self.r = re
 
@@ -235,7 +235,7 @@ class Star(RE):
             result += "}"
         return result
 
-class SigStar(RE):
+class SigStar(RE): # Represents the universal language, ∑*
     def __init__(self):
         pass
 
@@ -273,7 +273,7 @@ def char_to_str(o):
         result = "\\" + str(oct(o))
     return result
             
-class Range(RE):
+class Range(RE): # Represents a character range
     def __init__(self, r):
         self.left  = r[0]
         self.right = r[1]
@@ -307,7 +307,7 @@ class Range(RE):
             result += "}"
         return result
     
-class Not(RE):
+class Not(RE): # Represents the negation of the language
     def __init__(self, r):
         self.r = r;
 
@@ -343,7 +343,7 @@ class Not(RE):
             result += "}"
         return result
 
-class Epsilon(RE):
+class Epsilon(RE): # Represents language with the empty string
     def __init__(self):
         pass
     
@@ -374,7 +374,7 @@ class Epsilon(RE):
             result += "}"
         return result
 
-class Null(RE):
+class Null(RE): # Represents the empty language
     def __init__(self):
         pass
     def derive(self, c):
@@ -400,7 +400,7 @@ class Null(RE):
             result += "}"
         return result
 
-def build_r(expr):
+def build_r(expr): # Builds the regular expression tree from an AST
     if expr[0] == 'Union':
         return Union(build_r(expr[1]), build_r(expr[2]))
     elif expr[0] == 'Intersection':
@@ -458,11 +458,13 @@ if __name__ == '__main__':
     exp_re = r"((e|E)(\+|\-)?[0-9]+)?"
     float_re = ["("+f + exp_re + ")" for f in float_re]
     final_re = "|".join(float_re)
-#    re = build("(" + final_re + ")")
-#    inp = "12389712897.11238971298"
-    re = build("""([A-Z]|[0-9]|[a-z]|\.|_|%|\+|\-)+\@([A-Z]|[a-z]|[0-9]|\.|\-)+\.([A-Z]|[a-z]){2,}""")
+    re = build("(" + final_re + ")")
+    inp = "12389712897.11238971298"
+#    re = build("""`(([A-Z]|[0-9]|[a-z]|\.|_|%|\+|\-)+\@([A-Z]|[a-z]|[0-9]|\.|\-)+\.([A-Z]|[a-z]){2,})""")
+#    re =build("`(([a-zA-Z0-9])(([\-\.]|[_]+)?([a-zA-Z0-9]+))*(\@){1}[a-z0-9]+[\.]{1}(([a-z]{2,3})|([a-z]{2,3}[\.]{1}[a-z]{2,3})))")
 #    re = build("""(\.|[a-z])+\@""")
-    inp = "junk.email.address@gmail.com"
+#    inp = "moc.liamg@sggirbi"
+#    inp = "ibriggs@gmail.com"
 #    re = build("~(((((((((((((((a)(a)))(a)))(a)))(a)))((a)|(@))))((a)|(@))))(b)))")
 #    inp = "a"*5+ "bb"
     i = 0

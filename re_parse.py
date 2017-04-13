@@ -17,8 +17,18 @@ import ply.yacc as yacc
 #
 # difference : inter '-' concatenation
 #
-# concatenation : concatenation quant
-#               | quant
+# concatenation : quant
+#               | concatenation quant
+#
+# quant : star
+#       | plus
+#       | neg_rev
+#       | opt
+#       | range_rep
+#
+# star : quant '*'
+#
+# plus : quant '+'
 #
 # neg_rev : negation
 #         | reversal
@@ -27,15 +37,6 @@ import ply.yacc as yacc
 # negation : '~' neg_rev
 #
 # reversal : '`' neg_rev
-#
-# quant : star
-#       | plus
-#       | neg_rev
-#       | range_rep
-#
-# star : quant '*'
-#
-# plus : quant '+'
 #
 # opt : quant '?'
 #
@@ -61,10 +62,13 @@ import ply.yacc as yacc
 #
 # positive_set : '[' set_items ']'
 #
-# negative_set : '[^' set_items ']'
+# negative_set : '[' '^' set_items ']'
 #
-# set_items : range
-#           | char
+# set_items : setitem
+#           | setitems setitem
+#
+# set_item : range
+#          | char
 #
 # range : char '-' char
 #
@@ -97,7 +101,7 @@ tokens = (
 def t_OCTAL(t):
     r"\\0o[0-3][0-7]{0,2}"
     result = 0
-    for c in t.value[3:]:
+    for c in t.value[3:]: # skip over \0o
         result *= 8
         result += int(c)
     t.value = chr(result)
